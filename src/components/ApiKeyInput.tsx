@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,19 @@ interface ApiKeyInputProps {
 }
 
 export const ApiKeyInput = ({ onApiKeySubmit }: ApiKeyInputProps) => {
-  const [apiKey, setApiKey] = useState("");
+  const [apiKey, setApiKey] = useState("ad0f21e19ff6499f8072a5e313e0529e");
+
+  // Auto-submit with provided API key on component mount
+  useEffect(() => {
+    const providedKey = "ad0f21e19ff6499f8072a5e313e0529e";
+    if (providedKey) {
+      localStorage.setItem('newsApiKey', providedKey);
+      // Small delay to show the key is being used
+      setTimeout(() => {
+        onApiKeySubmit(providedKey);
+      }, 500);
+    }
+  }, [onApiKeySubmit]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
