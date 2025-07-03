@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,10 +38,10 @@ export const ApiKeyInput = ({ onApiKeySubmit }: ApiKeyInputProps) => {
       <Card className="w-full max-w-md shadow-card">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold bg-gradient-money bg-clip-text text-transparent">
-            🚀 Money News for Gen Z
+            👶 BabyFin
           </CardTitle>
           <p className="text-muted-foreground">
-            Your daily dose of financial news, but make it simple! 📈✨
+            Your first finance friend! Making money news as simple as baby talk! 👶💰✨
           </p>
         </CardHeader>
         
@@ -86,7 +87,7 @@ export const ApiKeyInput = ({ onApiKeySubmit }: ApiKeyInputProps) => {
               className="w-full"
               disabled={!apiKey.trim()}
             >
-              Start Reading Financial News! 🎉
+              Start Your BabyFin Journey! 👶🚀
             </Button>
           </form>
           
@@ -94,7 +95,7 @@ export const ApiKeyInput = ({ onApiKeySubmit }: ApiKeyInputProps) => {
             <p>
               No backend needed - your API key stays in your browser! 
               <br />
-              Made with 💚 for understanding money stuff
+              Made with 💚 for making finance simple and fun! 👶📈
             </p>
           </div>
         </CardContent>

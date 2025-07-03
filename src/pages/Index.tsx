@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +8,10 @@ import { NewsCard } from "@/components/NewsCard";
 import { StockChart } from "@/components/StockChart";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { ApiKeyInput } from "@/components/ApiKeyInput";
+import { LinkSummarizer } from "@/components/LinkSummarizer";
+import { GrokChat } from "@/components/GrokChat";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Sparkles, TrendingUp, DollarSign, Zap } from "lucide-react";
+import { Loader2, Sparkles, TrendingUp, DollarSign, Zap, Search } from "lucide-react";
 import heroImage from "@/assets/hero-finance.jpg";
 
 interface NewsArticle {
@@ -26,6 +29,8 @@ const Index = () => {
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
+  const [activeTab, setActiveTab] = useState("news");
+  const [searchQuery, setSearchQuery] = useState("");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [isRealTime, setIsRealTime] = useState(true);
   const { toast } = useToast();
@@ -229,6 +234,61 @@ const Index = () => {
     return sentiments[Math.floor(Math.random() * sentiments.length)];
   };
 
+  const handleSearch = async () => {
+    if (!searchQuery.trim() || !apiKey) return;
+    
+    setLoading(true);
+    try {
+      const proxyUrl = 'https://api.allorigins.win/raw?url=';
+      const apiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(searchQuery)}&language=en&sortBy=publishedAt&pageSize=30&apiKey=${apiKey}`;
+      const fullUrl = proxyUrl + encodeURIComponent(apiUrl);
+      
+      console.log('Searching news with query:', searchQuery);
+      
+      const response = await fetch(fullUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Search API Response:', data);
+      
+      if (data.status === 'error') {
+        throw new Error(data.message || 'API returned an error');
+      }
+      
+      const validArticles = (data.articles || []).filter((article: NewsArticle) => 
+        article.title && 
+        article.title !== '[Removed]' && 
+        article.description && 
+        article.description !== '[Removed]' &&
+        article.url
+      );
+      
+      setNews(validArticles);
+      setLastUpdate(new Date());
+      
+      toast({
+        title: "🔍 Search results ready!",
+        description: `Found ${validArticles.length} articles about "${searchQuery}"! 📰`,
+      });
+    } catch (error) {
+      console.error('Error searching news:', error);
+      toast({
+        title: "😅 Search had a hiccup",
+        description: "Let's try a different search term or check back later!",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredNews = activeCategory === "All" 
     ? news 
     : news.filter(article => getCategoryForArticle(article.title, article.description) === activeCategory);
@@ -248,11 +308,11 @@ const Index = () => {
                 <DollarSign className="w-6 h-6 text-white" />
               </div>
               <h1 className="text-2xl font-bold bg-gradient-money bg-clip-text text-transparent">
-                MoneyTalk 4 Kids
+                BabyFin 👶💰
               </h1>
               <Badge variant="secondary" className="hidden sm:flex">
                 <Sparkles className="w-3 h-3 mr-1" />
-                Gen Z Edition
+                Finance Made Simple
               </Badge>
               {lastUpdate && (
                 <Badge variant="outline" className="hidden md:flex">
@@ -278,6 +338,40 @@ const Index = () => {
               </Button>
             </div>
           </div>
+
+          {/* Tab Navigation */}
+          <div className="mt-4 flex gap-4 border-b">
+            <button
+              onClick={() => setActiveTab("news")}
+              className={`pb-2 px-1 font-medium transition-colors ${
+                activeTab === "news" 
+                  ? "text-primary border-b-2 border-primary" 
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              📰 News Feed
+            </button>
+            <button
+              onClick={() => setActiveTab("link")}
+              className={`pb-2 px-1 font-medium transition-colors ${
+                activeTab === "link" 
+                  ? "text-primary border-b-2 border-primary" 
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              🔗 Link Summary
+            </button>
+            <button
+              onClick={() => setActiveTab("chat")}
+              className={`pb-2 px-1 font-medium transition-colors ${
+                activeTab === "chat" 
+                  ? "text-primary border-b-2 border-primary" 
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              💬 Ask Grok
+            </button>
+          </div>
         </div>
       </div>
 
@@ -291,11 +385,11 @@ const Index = () => {
           <div className="relative container mx-auto px-4 h-full flex items-center">
             <div className="text-white max-w-2xl">
               <h2 className="text-4xl font-bold mb-4">
-                Financial News That Actually Makes Sense! 🧠✨
+                BabyFin: Your First Finance Friend! 👶💰
               </h2>
               <p className="text-xl opacity-90">
-                We turn boring money talk into fun, simple explanations even a 5-year-old would understand! 
-                No cap! 📈🚀
+                Making money stuff as easy as baby talk! Search, summarize, and chat about finance! 
+                🍼📈
               </p>
             </div>
           </div>
@@ -303,102 +397,137 @@ const Index = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="text-center p-4 bg-bullish/10 border-bullish/20">
-            <CardContent className="p-0">
-              <div className="text-2xl font-bold text-bullish">📈 Stonks</div>
-              <div className="text-sm text-muted-foreground">Going Up!</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center p-4 bg-accent/10 border-accent/20">
-            <CardContent className="p-0">
-              <div className="text-2xl font-bold text-accent">🧠 Simplified</div>
-              <div className="text-sm text-muted-foreground">For Everyone</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center p-4 bg-primary/10 border-primary/20">
-            <CardContent className="p-0">
-              <div className="text-2xl font-bold text-primary">⚡ Fresh</div>
-              <div className="text-sm text-muted-foreground">Daily Updates</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center p-4 bg-neutral/10 border-neutral/20">
-            <CardContent className="p-0">
-              <div className="text-2xl font-bold text-neutral">🎯 No BS</div>
-              <div className="text-sm text-muted-foreground">Just Facts</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Stock Charts */}
-        <div className="mb-8">
-          <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-primary" />
-            Live Market Vibes 📊
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {mockStockData.map((stock, index) => (
-              <StockChart key={index} {...stock} />
-            ))}
-          </div>
-        </div>
-
-        {/* Category Filter */}
-        <CategoryFilter 
-          categories={categories}
-          activeCategory={activeCategory}
-          onCategoryChange={setActiveCategory}
-        />
-
-        {/* News Feed */}
-        <div className="mt-8">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-2xl font-bold flex items-center gap-2">
-              <Zap className="w-6 h-6 text-accent" />
-              Latest Financial Tea ☕
-            </h3>
-            <Badge variant="outline" className="text-sm">
-              {filteredNews.length} stories simplified
-            </Badge>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <span className="ml-3 text-lg font-medium">Loading financial tea... ☕</span>
+        {/* Content based on active tab */}
+        {activeTab === "news" && (
+          <>
+            {/* Search Bar */}
+            <div className="mb-8">
+              <div className="max-w-2xl mx-auto">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <Input
+                      placeholder="Search for any financial news... (e.g., 'Apple stock', 'Bitcoin', 'inflation')"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleSearch}
+                    disabled={loading || !searchQuery.trim()}
+                    variant="money"
+                  >
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                    Search
+                  </Button>
+                </div>
+              </div>
             </div>
-          ) : filteredNews.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filteredNews.map((article, index) => (
-                <NewsCard
-                  key={index}
-                  title={article.title}
-                  summary={article.description || "No summary available"}
-                  kidExplanation={simplifyForKids(article.title, article.description || "")}
-                  category={getCategoryForArticle(article.title, article.description || "")}
-                  sentiment={getSentiment()}
-                  publishedAt={article.publishedAt}
-                  source={article.source.name}
-                  url={article.url}
-                />
-              ))}
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <Card className="text-center p-4 bg-bullish/10 border-bullish/20">
+                <CardContent className="p-0">
+                  <div className="text-2xl font-bold text-bullish">📈 Stonks</div>
+                  <div className="text-sm text-muted-foreground">Going Up!</div>
+                </CardContent>
+              </Card>
+              <Card className="text-center p-4 bg-accent/10 border-accent/20">
+                <CardContent className="p-0">
+                  <div className="text-2xl font-bold text-accent">🧠 Simplified</div>
+                  <div className="text-sm text-muted-foreground">For Everyone</div>
+                </CardContent>
+              </Card>
+              <Card className="text-center p-4 bg-primary/10 border-primary/20">
+                <CardContent className="p-0">
+                  <div className="text-2xl font-bold text-primary">⚡ Fresh</div>
+                  <div className="text-sm text-muted-foreground">Daily Updates</div>
+                </CardContent>
+              </Card>
+              <Card className="text-center p-4 bg-neutral/10 border-neutral/20">
+                <CardContent className="p-0">
+                  <div className="text-2xl font-bold text-neutral">🎯 No BS</div>
+                  <div className="text-sm text-muted-foreground">Just Facts</div>
+                </CardContent>
+              </Card>
             </div>
-          ) : (
-            <Card className="p-8 text-center">
-              <CardContent>
-                <div className="text-6xl mb-4">🤷‍♀️</div>
-                <h3 className="text-xl font-bold mb-2">No financial drama in this category!</h3>
-                <p className="text-muted-foreground mb-4">
-                  Try switching categories or refreshing for the latest money news.
-                </p>
-                <Button variant="money" onClick={() => fetchNews(apiKey)}>
-                  Get Some Tea! ☕
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+
+            {/* Stock Charts */}
+            <div className="mb-8">
+              <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                <TrendingUp className="w-6 h-6 text-primary" />
+                Live Market Vibes 📊
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {mockStockData.map((stock, index) => (
+                  <StockChart key={index} {...stock} />
+                ))}
+              </div>
+            </div>
+
+            {/* Category Filter */}
+            <CategoryFilter 
+              categories={categories}
+              activeCategory={activeCategory}
+              onCategoryChange={setActiveCategory}
+            />
+
+            {/* News Feed */}
+            <div className="mt-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold flex items-center gap-2">
+                  <Zap className="w-6 h-6 text-accent" />
+                  Latest Financial Tea ☕
+                </h3>
+                <Badge variant="outline" className="text-sm">
+                  {filteredNews.length} stories simplified
+                </Badge>
+              </div>
+
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <span className="ml-3 text-lg font-medium">Loading financial tea... ☕</span>
+                </div>
+              ) : filteredNews.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {filteredNews.map((article, index) => (
+                    <NewsCard
+                      key={index}
+                      title={article.title}
+                      summary={article.description || "No summary available"}
+                      kidExplanation={simplifyForKids(article.title, article.description || "")}
+                      category={getCategoryForArticle(article.title, article.description || "")}
+                      sentiment={getSentiment()}
+                      publishedAt={article.publishedAt}
+                      source={article.source.name}
+                      url={article.url}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <Card className="p-8 text-center">
+                  <CardContent>
+                    <div className="text-6xl mb-4">🤷‍♀️</div>
+                    <h3 className="text-xl font-bold mb-2">No financial drama in this category!</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Try switching categories, searching for something, or refreshing for the latest money news.
+                    </p>
+                    <Button variant="money" onClick={() => fetchNews(apiKey)}>
+                      Get Some Tea! ☕
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </>
+        )}
+
+        {activeTab === "link" && <LinkSummarizer />}
+        
+        {activeTab === "chat" && <GrokChat />}
       </div>
     </div>
   );
