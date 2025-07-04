@@ -6,8 +6,7 @@ import { FileText, Sparkles } from "lucide-react";
 import { LinkInput } from "./LinkInput";
 import { SummaryDisplay } from "./SummaryDisplay";
 import { InfoCard } from "./InfoCard";
-import { MOCK_SUMMARY } from "./constants";
-import { createSpeechUtterance, stopSpeech } from "./utils";
+import { createSpeechUtterance, stopSpeech, fetchArticleContent, summarizeArticle } from "./utils";
 
 export const LinkSummarizer = () => {
   const [url, setUrl] = useState("");
@@ -25,19 +24,50 @@ export const LinkSummarizer = () => {
       return;
     }
 
+    // Basic URL validation
+    try {
+      new URL(url);
+    } catch {
+      toast({
+        title: "🔗 Invalid URL!",
+        description: "Please enter a valid news article URL (starting with http:// or https://)",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      setSummary(MOCK_SUMMARY);
+      toast({
+        title: "📖 Reading article...",
+        description: "Fetching content from the provided URL...",
+      });
+
+      // Fetch article content
+      const articleContent = await fetchArticleContent(url);
+      
+      if (!articleContent) {
+        throw new Error("Could not extract article content");
+      }
+
+      toast({
+        title: "🤖 Summarizing...",
+        description: "Creating a 5-year-old friendly summary...",
+      });
+
+      // Summarize the article content
+      const articleSummary = await summarizeArticle(articleContent);
+      
+      setSummary(articleSummary);
       
       toast({
-        title: "✨ Real-time summary ready!",
+        title: "✨ Summary ready!",
         description: "Your news has been turned into baby-friendly finance talk with live updates!",
       });
     } catch (error) {
       console.error('Error summarizing:', error);
       toast({
         title: "😅 Oops!",
-        description: "Couldn't summarize that link right now. Try another one!",
+        description: "Couldn't summarize that link right now. Try another news article URL or check if the link is accessible!",
       });
     } finally {
       setLoading(false);
@@ -86,7 +116,7 @@ export const LinkSummarizer = () => {
         </p>
         <Badge variant="secondary" className="mt-2">
           <Sparkles className="w-3 h-3 mr-1" />
-          Real-time • 5-Year-Old Friendly • Voice Enabled
+          Real Content • 5-Year-Old Friendly • Voice Enabled
         </Badge>
       </div>
 
