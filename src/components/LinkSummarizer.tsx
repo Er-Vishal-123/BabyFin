@@ -1,11 +1,11 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Link, Volume2, VolumeX, FileText } from "lucide-react";
+import { Loader2, Link, Volume2, VolumeX, FileText, Sparkles } from "lucide-react";
 
 export const LinkSummarizer = () => {
   const [url, setUrl] = useState("");
@@ -138,7 +138,7 @@ This news is fresh from today and shows how quickly things can change in the mon
             <Button 
               onClick={handleSummarize}
               disabled={loading}
-              variant="money"
+              variant="default"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "✨"} 
               Summarize Now
@@ -164,7 +164,7 @@ This news is fresh from today and shows how quickly things can change in the mon
                 </Badge>
                 <Button
                   onClick={handleSpeak}
-                  variant={isPlaying ? "bearish" : "bullish"}
+                  variant={isPlaying ? "destructive" : "default"}
                   size="sm"
                 >
                   {isPlaying ? (
