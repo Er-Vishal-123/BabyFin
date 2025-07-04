@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,6 +65,7 @@ const Index = () => {
     }
   ];
 
+  // Enhanced real-time news fetching
   useEffect(() => {
     const savedApiKey = localStorage.getItem('newsApiKey');
     const providedKey = "ad0f21e19ff6499f8072a5e313e0529e";
@@ -73,42 +73,51 @@ const Index = () => {
     if (providedKey) {
       setApiKey(providedKey);
       localStorage.setItem('newsApiKey', providedKey);
-      fetchNews(providedKey);
+      fetchLatestNews(providedKey);
       
-      // Set up real-time updates every 5 minutes
+      // Set up more frequent real-time updates every 2 minutes for fresher news
       const interval = setInterval(() => {
-        fetchNews(providedKey);
-      }, 5 * 60 * 1000); // 5 minutes
+        if (isRealTime) {
+          fetchLatestNews(providedKey);
+        }
+      }, 2 * 60 * 1000); // 2 minutes for more frequent updates
       
       return () => clearInterval(interval);
     } else if (savedApiKey) {
       setApiKey(savedApiKey);
-      fetchNews(savedApiKey);
+      fetchLatestNews(savedApiKey);
     }
-  }, []);
+  }, [isRealTime]);
 
-  const fetchNews = async (key: string) => {
+  const fetchLatestNews = async (key: string) => {
     setLoading(true);
     try {
+      // Enhanced financial queries for more comprehensive coverage
       const financialQueries = [
-        'stock market',
-        'earnings report',
-        'financial markets',
-        'cryptocurrency bitcoin',
-        'investment banking',
-        'Federal Reserve',
-        'NYSE nasdaq',
-        'economic news'
+        'stock market today',
+        'breaking financial news',
+        'earnings report today',
+        'cryptocurrency news today',
+        'Federal Reserve news',
+        'market updates today',
+        'financial markets breaking',
+        'economic news today',
+        'nasdaq today',
+        'dow jones today'
       ];
       
       const randomQuery = financialQueries[Math.floor(Math.random() * financialQueries.length)];
       
-      // Using CORS proxy to avoid CORS issues
+      // Get today's date for fresher news
+      const today = new Date();
+      const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+      const fromDate = yesterday.toISOString().split('T')[0];
+      
       const proxyUrl = 'https://api.allorigins.win/raw?url=';
-      const apiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(randomQuery)}&language=en&sortBy=publishedAt&pageSize=30&apiKey=${key}`;
+      const apiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(randomQuery)}&language=en&sortBy=publishedAt&from=${fromDate}&pageSize=50&apiKey=${key}`;
       const fullUrl = proxyUrl + encodeURIComponent(apiUrl);
       
-      console.log('Fetching news with query:', randomQuery);
+      console.log('Fetching latest news with query:', randomQuery, 'from date:', fromDate);
       
       const response = await fetch(fullUrl, {
         method: 'GET',
@@ -128,59 +137,61 @@ const Index = () => {
         throw new Error(data.message || 'API returned an error');
       }
       
+      // Filter for valid and recent articles only
       const validArticles = (data.articles || []).filter((article: NewsArticle) => 
         article.title && 
         article.title !== '[Removed]' && 
         article.description && 
         article.description !== '[Removed]' &&
-        article.url
-      );
+        article.url &&
+        new Date(article.publishedAt) > new Date(Date.now() - 48 * 60 * 60 * 1000) // Only articles from last 48 hours
+      ).slice(0, 30); // Limit to 30 most recent articles
       
       setNews(validArticles);
       setLastUpdate(new Date());
       
       toast({
         title: "🎉 Fresh financial tea served!",
-        description: `Found ${validArticles.length} spicy financial stories! ☕📈`,
+        description: `Found ${validArticles.length} hot financial stories from the last 48 hours! ☕📈`,
       });
     } catch (error) {
-      console.error('Error fetching news:', error);
+      console.error('Error fetching latest news:', error);
       
-      // Fallback to mock data if API fails
+      // Enhanced fallback with more recent mock data
       const mockNewsData = [
         {
-          title: "Apple Stock Hits New All-Time High - What This Means for Your Wallet",
-          description: "Apple's stock price soared to unprecedented levels today as investors showed confidence in the tech giant's latest quarterly earnings report.",
-          url: "https://example.com/apple-stock",
-          publishedAt: new Date().toISOString(),
+          title: "Breaking: Apple Stock Surges to New All-Time High After Strong Q4 Earnings",
+          description: "Apple's stock price reached unprecedented levels today following better-than-expected quarterly earnings and strong iPhone sales guidance for the upcoming holiday season.",
+          url: "https://example.com/apple-stock-surge",
+          publishedAt: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
           source: { name: "Financial Times" }
         },
         {
-          title: "Bitcoin Rollercoaster: Crypto Market Sees Wild Swings",
-          description: "Cryptocurrency markets experienced significant volatility with Bitcoin fluctuating between major support and resistance levels.",
-          url: "https://example.com/bitcoin-volatility",
-          publishedAt: new Date(Date.now() - 3600000).toISOString(),
+          title: "Bitcoin Breaks $70K Again: Crypto Market Rally Continues",
+          description: "Bitcoin has crossed the $70,000 threshold once more as institutional investors show renewed confidence in cryptocurrency markets amid regulatory clarity.",
+          url: "https://example.com/bitcoin-70k",
+          publishedAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
           source: { name: "Crypto Weekly" }
         },
         {
-          title: "Federal Reserve Hints at Interest Rate Changes",
-          description: "The Federal Reserve's latest meeting minutes suggest potential shifts in monetary policy that could impact borrowing costs nationwide.",
-          url: "https://example.com/fed-rates",
-          publishedAt: new Date(Date.now() - 7200000).toISOString(),
+          title: "Federal Reserve Signals Potential Rate Changes in Latest Meeting",
+          description: "The Federal Reserve's latest policy meeting hints at upcoming adjustments to interest rates as inflation data shows signs of stabilizing.",
+          url: "https://example.com/fed-rates-latest",
+          publishedAt: new Date(Date.now() - 5400000).toISOString(), // 1.5 hours ago
           source: { name: "Economic Daily" }
         },
         {
-          title: "Tesla Earnings Surprise Wall Street Analysts",
-          description: "Electric vehicle manufacturer Tesla reported better-than-expected quarterly results, sending shares up in after-hours trading.",
-          url: "https://example.com/tesla-earnings",
-          publishedAt: new Date(Date.now() - 10800000).toISOString(),
+          title: "Tesla Delivers Record Numbers: Stock Jumps 8% in After-Hours Trading",
+          description: "Tesla reported record vehicle deliveries this quarter, sending shares soaring in extended trading as investors celebrate the milestone achievement.",
+          url: "https://example.com/tesla-record-deliveries",
+          publishedAt: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
           source: { name: "Market Watch" }
         },
         {
-          title: "Gold Prices Surge Amid Economic Uncertainty",
-          description: "Precious metals markets saw significant gains as investors sought safe-haven assets during periods of market volatility.",
-          url: "https://example.com/gold-surge",
-          publishedAt: new Date(Date.now() - 14400000).toISOString(),
+          title: "Gold Hits New High: Safe Haven Demand Surges Amid Market Uncertainty",
+          description: "Gold prices reached new record levels as investors seek safe-haven assets during a period of increased market volatility and geopolitical tensions.",
+          url: "https://example.com/gold-new-high",
+          publishedAt: new Date(Date.now() - 9000000).toISOString(), // 2.5 hours ago
           source: { name: "Commodity News" }
         }
       ];
@@ -189,26 +200,49 @@ const Index = () => {
       setLastUpdate(new Date());
       
       toast({
-        title: "📰 Using demo financial news",
-        description: "Showing sample stories while we work on getting live data! The simplified explanations still work perfectly! 💪",
+        title: "📰 Using latest demo financial news",
+        description: "Showing fresh sample stories with real-time updates! The 5-year-old explanations are ready! 👶💡",
       });
     } finally {
       setLoading(false);
     }
   };
 
+  // Enhanced kid-friendly explanations with more variety
   const simplifyForKids = (title: string, description: string): string => {
-    const simplifications = [
-      "Imagine your piggy bank, but MUCH bigger! 🐷💰",
-      "It's like when you trade Pokemon cards, but with company pieces! 🃏✨",
-      "Think of companies like your favorite YouTubers - sometimes they're trending up, sometimes down! 📱📈",
-      "Money stuff happened and people are either happy 😊 or sad 😢 about it!",
-      "Someone's wallet got heavier or lighter today! 💰⚖️",
-      "It's like a video game where scores go up and down, but with real money! 🎮💵",
-      "Companies had a good day or bad day, kinda like when you ace a test or forget homework! 📚📊"
+    const keywords = (title + " " + description).toLowerCase();
+    
+    // More specific explanations based on content
+    if (keywords.includes('apple') || keywords.includes('iphone')) {
+      return "Apple (the company that makes iPhones) did really well and made lots of money! It's like when your lemonade stand sells way more cups than expected! 📱💰";
+    }
+    
+    if (keywords.includes('bitcoin') || keywords.includes('crypto')) {
+      return "Bitcoin is like digital money that lives in computers. Sometimes lots of people want it (price goes up 📈) and sometimes fewer people want it (price goes down 📉)! It's like trading cards but on computers! 💻🪙";
+    }
+    
+    if (keywords.includes('tesla')) {
+      return "Tesla makes really cool electric cars (like big remote control cars but for grown-ups!). When they sell lots of cars, everyone gets excited and wants to own a piece of the company! 🚗⚡";
+    }
+    
+    if (keywords.includes('federal reserve') || keywords.includes('fed')) {
+      return "The Federal Reserve is like the piggy bank boss for the whole country! They decide if it's easier or harder for people to borrow money - kinda like your parents deciding your allowance! 🏦💰";
+    }
+    
+    if (keywords.includes('gold')) {
+      return "When people get worried about money stuff, they buy gold because it's shiny and valuable - like how you might keep your favorite toy safe when things get crazy! ✨🏆";
+    }
+    
+    // General explanations
+    const generalExplanations = [
+      "A company did something awesome and now everyone wants to be their friend (buy their stock)! 🎉📈",
+      "It's like when your favorite YouTuber gets more subscribers - their 'company score' goes up! 📱⭐",
+      "Think of companies like Pokemon cards - sometimes they're worth more, sometimes less! 🃏💫",
+      "Money news happened and some grown-ups are doing their happy dance! 💃🕺",
+      "It's like a video game where company scores go up and down, but with real money! 🎮💵"
     ];
     
-    return simplifications[Math.floor(Math.random() * simplifications.length)];
+    return generalExplanations[Math.floor(Math.random() * generalExplanations.length)];
   };
 
   const getCategoryForArticle = (title: string, description: string): string => {
@@ -239,11 +273,15 @@ const Index = () => {
     
     setLoading(true);
     try {
+      const today = new Date();
+      const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+      const fromDate = yesterday.toISOString().split('T')[0];
+      
       const proxyUrl = 'https://api.allorigins.win/raw?url=';
-      const apiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(searchQuery)}&language=en&sortBy=publishedAt&pageSize=30&apiKey=${apiKey}`;
+      const apiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(searchQuery)}&language=en&sortBy=publishedAt&from=${fromDate}&pageSize=30&apiKey=${apiKey}`;
       const fullUrl = proxyUrl + encodeURIComponent(apiUrl);
       
-      console.log('Searching news with query:', searchQuery);
+      console.log('Searching latest news with query:', searchQuery);
       
       const response = await fetch(fullUrl, {
         method: 'GET',
@@ -275,8 +313,8 @@ const Index = () => {
       setLastUpdate(new Date());
       
       toast({
-        title: "🔍 Search results ready!",
-        description: `Found ${validArticles.length} articles about "${searchQuery}"! 📰`,
+        title: "🔍 Latest search results ready!",
+        description: `Found ${validArticles.length} fresh articles about "${searchQuery}"! 📰`,
       });
     } catch (error) {
       console.error('Error searching news:', error);
@@ -331,7 +369,7 @@ const Index = () => {
               <Button 
                 variant="money" 
                 size="sm"
-                onClick={() => fetchNews(apiKey)}
+                onClick={() => fetchLatestNews(apiKey)}
                 disabled={loading}
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "🔄 Refresh Feed"}
@@ -339,7 +377,7 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Tab Navigation */}
+          {/* Tab Navigation - Updated link summary to news summary */}
           <div className="mt-4 flex gap-4 border-b">
             <button
               onClick={() => setActiveTab("news")}
@@ -352,14 +390,14 @@ const Index = () => {
               📰 News Feed
             </button>
             <button
-              onClick={() => setActiveTab("link")}
+              onClick={() => setActiveTab("summary")}
               className={`pb-2 px-1 font-medium transition-colors ${
-                activeTab === "link" 
+                activeTab === "summary" 
                   ? "text-primary border-b-2 border-primary" 
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              🔗 Link Summary
+              📋 News Summary
             </button>
             <button
               onClick={() => setActiveTab("chat")}
@@ -388,7 +426,7 @@ const Index = () => {
                 BabyFin: Your First Finance Friend! 👶💰
               </h2>
               <p className="text-xl opacity-90">
-                Making money stuff as easy as baby talk! Search, summarize, and chat about finance! 
+                Making money stuff as easy as baby talk! Get real-time news, summaries, and chat about finance! 
                 🍼📈
               </p>
             </div>
@@ -430,26 +468,26 @@ const Index = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               <Card className="text-center p-4 bg-bullish/10 border-bullish/20">
                 <CardContent className="p-0">
-                  <div className="text-2xl font-bold text-bullish">📈 Stonks</div>
-                  <div className="text-sm text-muted-foreground">Going Up!</div>
+                  <div className="text-2xl font-bold text-bullish">📈 Live</div>
+                  <div className="text-sm text-muted-foreground">Real-time Updates</div>
                 </CardContent>
               </Card>
               <Card className="text-center p-4 bg-accent/10 border-accent/20">
                 <CardContent className="p-0">
-                  <div className="text-2xl font-bold text-accent">🧠 Simplified</div>
-                  <div className="text-sm text-muted-foreground">For Everyone</div>
+                  <div className="text-2xl font-bold text-accent">👶 Simple</div>
+                  <div className="text-sm text-muted-foreground">5-Year-Old Friendly</div>
                 </CardContent>
               </Card>
               <Card className="text-center p-4 bg-primary/10 border-primary/20">
                 <CardContent className="p-0">
                   <div className="text-2xl font-bold text-primary">⚡ Fresh</div>
-                  <div className="text-sm text-muted-foreground">Daily Updates</div>
+                  <div className="text-sm text-muted-foreground">Latest Stories</div>
                 </CardContent>
               </Card>
               <Card className="text-center p-4 bg-neutral/10 border-neutral/20">
                 <CardContent className="p-0">
-                  <div className="text-2xl font-bold text-neutral">🎯 No BS</div>
-                  <div className="text-sm text-muted-foreground">Just Facts</div>
+                  <div className="text-2xl font-bold text-neutral">🎯 Smart</div>
+                  <div className="text-sm text-muted-foreground">AI Explanations</div>
                 </CardContent>
               </Card>
             </div>
@@ -479,17 +517,17 @@ const Index = () => {
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold flex items-center gap-2">
                   <Zap className="w-6 h-6 text-accent" />
-                  Latest Financial Tea ☕
+                  Latest Financial Tea ☕ (Real-time)
                 </h3>
                 <Badge variant="outline" className="text-sm">
-                  {filteredNews.length} stories simplified
+                  {filteredNews.length} stories with 5-year-old explanations
                 </Badge>
               </div>
 
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                  <span className="ml-3 text-lg font-medium">Loading financial tea... ☕</span>
+                  <span className="ml-3 text-lg font-medium">Loading fresh financial tea... ☕</span>
                 </div>
               ) : filteredNews.length > 0 ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -511,12 +549,12 @@ const Index = () => {
                 <Card className="p-8 text-center">
                   <CardContent>
                     <div className="text-6xl mb-4">🤷‍♀️</div>
-                    <h3 className="text-xl font-bold mb-2">No financial drama in this category!</h3>
+                    <h3 className="text-xl font-bold mb-2">No fresh financial drama in this category!</h3>
                     <p className="text-muted-foreground mb-4">
                       Try switching categories, searching for something, or refreshing for the latest money news.
                     </p>
-                    <Button variant="money" onClick={() => fetchNews(apiKey)}>
-                      Get Some Tea! ☕
+                    <Button variant="money" onClick={() => fetchLatestNews(apiKey)}>
+                      Get Fresh Tea! ☕
                     </Button>
                   </CardContent>
                 </Card>
@@ -525,7 +563,7 @@ const Index = () => {
           </>
         )}
 
-        {activeTab === "link" && <LinkSummarizer />}
+        {activeTab === "summary" && <LinkSummarizer />}
         
         {activeTab === "chat" && <GrokChat />}
       </div>
