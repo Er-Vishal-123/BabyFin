@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import { NewsCard } from "@/components/NewsCard";
 import { StockChart } from "@/components/StockChart";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { ApiKeyInput } from "@/components/ApiKeyInput";
-import { LinkSummarizer } from "@/components/LinkSummarizer";
+import { LinkSummarizer } from "@/components/link-summarizer/LinkSummarizer";
 import { GrokChat } from "@/components/GrokChat";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Sparkles, TrendingUp, DollarSign, Zap, Search } from "lucide-react";
