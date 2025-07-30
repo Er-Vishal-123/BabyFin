@@ -24,10 +24,9 @@ export const GrokChat = () => {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [apiKey, setApiKey] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-
-  const OPENAI_API_KEY = "sk-1234ijkl1234ijkl1234ijkl1234ijkl1234";
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -37,8 +36,25 @@ export const GrokChat = () => {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    // Load API key from localStorage
+    const savedApiKey = localStorage.getItem('openai_api_key');
+    if (savedApiKey) {
+      setApiKey(savedApiKey);
+    }
+  }, []);
+
   const handleSendMessage = async () => {
     if (!input.trim()) return;
+
+    if (!apiKey.trim()) {
+      toast({
+        title: "🔑 API Key Required",
+        description: "Please enter your OpenAI API key first!",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -56,14 +72,14 @@ export const GrokChat = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: "gpt-4.1-2025-04-14",
+          model: "gpt-4o-mini",
           messages: [
             {
               role: "system",
-              content: "You are BabyFin's AI assistant, designed to explain finance and money concepts in the simplest possible terms, as if explaining to a 5-year-old. Use lots of emojis, analogies with toys/games/everyday things kids understand, and keep responses friendly and encouraging. Always end responses with an encouraging emoji combo. Keep responses concise but informative."
+              content: "You are BabyFin's AI assistant, designed to explain finance and money concepts in the simplest possible terms, as if explaining to a 5-year-old. Use lots of emojis, analogies with toys/games/everyday things kids understand, and keep responses friendly and encouraging. Always end responses with an encouraging emoji combo. Keep responses concise but informative. ALWAYS answer the user's question directly and accurately."
             },
             {
               role: "user",
@@ -105,7 +121,9 @@ Think of money like your allowance - you earn it by doing good things, and then 
 
 📈 If it's about stocks, imagine companies are like your favorite video games - when lots of people want to play them, they become more valuable!
 
-Try asking me again - I'll do my best to help! 🚀✨`,
+Try asking me again - I'll do my best to help! 🚀✨
+
+**Note:** There might be an issue with the API key. Please check your OpenAI API key is valid.`,
         sender: 'assistant',
         timestamp: new Date()
       };
@@ -114,7 +132,8 @@ Try asking me again - I'll do my best to help! 🚀✨`,
       
       toast({
         title: "🤖 AI had a tiny hiccup!",
-        description: "I gave you a backup answer, but try asking again!",
+        description: "Check your API key and try asking again!",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -128,17 +147,54 @@ Try asking me again - I'll do my best to help! 🚀✨`,
     }
   };
 
+  const handleApiKeySave = () => {
+    if (apiKey.trim()) {
+      localStorage.setItem('openai_api_key', apiKey.trim());
+      toast({
+        title: "🔑 API Key Saved",
+        description: "Your OpenAI API key has been saved securely in your browser!",
+      });
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold mb-4 flex items-center justify-center gap-2">
           <MessageCircle className="w-8 h-8 text-primary" />
-          Chat with OpenAI 🤖
+          Ask OpenAI 🤖
         </h2>
         <p className="text-muted-foreground text-lg">
           Ask me anything about money, finance, or investing! I'll explain it like you're 5! 👶💡
         </p>
       </div>
+
+      {/* API Key Input */}
+      <Card className="mb-4">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">🔑 OpenAI API Key</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <Input
+              type="password"
+              placeholder="Enter your OpenAI API key (sk-...)"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              className="flex-1"
+            />
+            <Button onClick={handleApiKeySave} variant="outline">
+              Save Key
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Your API key is stored locally in your browser and never sent to our servers. Get your key from{" "}
+            <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+              OpenAI Platform
+            </a>
+          </p>
+        </CardContent>
+      </Card>
 
       <Card className="shadow-card h-[600px] flex flex-col">
         <CardHeader className="pb-3">
@@ -146,7 +202,7 @@ Try asking me again - I'll do my best to help! 🚀✨`,
             <Bot className="w-5 h-5 text-primary" />
             BabyFin AI Assistant (OpenAI)
             <div className="ml-auto text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-              🟢 Online
+              🟢 {apiKey ? 'Ready' : 'Need API Key'}
             </div>
           </CardTitle>
         </CardHeader>
@@ -214,12 +270,12 @@ Try asking me again - I'll do my best to help! 🚀✨`,
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                disabled={loading}
+                disabled={loading || !apiKey}
                 className="flex-1"
               />
               <Button
                 onClick={handleSendMessage}
-                disabled={loading || !input.trim()}
+                disabled={loading || !input.trim() || !apiKey}
                 variant="money"
               >
                 {loading ? (
