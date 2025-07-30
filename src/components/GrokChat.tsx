@@ -9,7 +9,7 @@ import { Loader2, Send, MessageCircle, Bot, User } from "lucide-react";
 interface Message {
   id: string;
   content: string;
-  sender: 'user' | 'grok';
+  sender: 'user' | 'assistant';
   timestamp: Date;
 }
 
@@ -17,8 +17,8 @@ export const GrokChat = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: "Hey there! 👋 I'm your BabyFin AI assistant powered by Grok! Ask me anything about finance, money, investing, or economics and I'll explain it in super simple terms! 🍼💰",
-      sender: 'grok',
+      content: "Hey there! 👋 I'm your BabyFin AI assistant powered by OpenAI! Ask me anything about finance, money, investing, or economics and I'll explain it in super simple terms! 🍼💰",
+      sender: 'assistant',
       timestamp: new Date()
     }
   ]);
@@ -27,7 +27,7 @@ export const GrokChat = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const GROK_API_KEY = "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";
+  const OPENAI_API_KEY = "sk-1234ijkl1234ijkl1234ijkl1234ijkl1234";
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -52,46 +52,47 @@ export const GrokChat = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('https://api.x.ai/v1/chat/completions', {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${GROK_API_KEY}`,
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
+          model: "gpt-4.1-2025-04-14",
           messages: [
             {
               role: "system",
-              content: "You are BabyFin's AI assistant, designed to explain finance and money concepts in the simplest possible terms, as if explaining to a 5-year-old. Use lots of emojis, analogies with toys/games/everyday things kids understand, and keep responses friendly and encouraging. Always end responses with an encouraging emoji combo."
+              content: "You are BabyFin's AI assistant, designed to explain finance and money concepts in the simplest possible terms, as if explaining to a 5-year-old. Use lots of emojis, analogies with toys/games/everyday things kids understand, and keep responses friendly and encouraging. Always end responses with an encouraging emoji combo. Keep responses concise but informative."
             },
             {
               role: "user",
               content: userMessage.content
             }
           ],
-          model: "grok-beta",
-          stream: false,
-          temperature: 0.7
+          temperature: 0.7,
+          max_tokens: 500,
+          stream: false
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`OpenAI API error! status: ${response.status}`);
       }
 
       const data = await response.json();
       
-      const grokMessage: Message = {
+      const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: data.choices[0]?.message?.content || "Sorry, I couldn't understand that. Can you try asking in a different way? 🤔",
-        sender: 'grok',
+        sender: 'assistant',
         timestamp: new Date()
       };
 
-      setMessages(prev => [...prev, grokMessage]);
+      setMessages(prev => [...prev, assistantMessage]);
       
     } catch (error) {
-      console.error('Error calling Grok API:', error);
+      console.error('Error calling OpenAI API:', error);
       
       // Fallback response
       const fallbackMessage: Message = {
@@ -105,7 +106,7 @@ Think of money like your allowance - you earn it by doing good things, and then 
 📈 If it's about stocks, imagine companies are like your favorite video games - when lots of people want to play them, they become more valuable!
 
 Try asking me again - I'll do my best to help! 🚀✨`,
-        sender: 'grok',
+        sender: 'assistant',
         timestamp: new Date()
       };
 
@@ -132,7 +133,7 @@ Try asking me again - I'll do my best to help! 🚀✨`,
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold mb-4 flex items-center justify-center gap-2">
           <MessageCircle className="w-8 h-8 text-primary" />
-          Chat with Grok AI 🤖
+          Chat with OpenAI 🤖
         </h2>
         <p className="text-muted-foreground text-lg">
           Ask me anything about money, finance, or investing! I'll explain it like you're 5! 👶💡
@@ -143,7 +144,7 @@ Try asking me again - I'll do my best to help! 🚀✨`,
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Bot className="w-5 h-5 text-primary" />
-            BabyFin AI Assistant
+            BabyFin AI Assistant (OpenAI)
             <div className="ml-auto text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
               🟢 Online
             </div>
