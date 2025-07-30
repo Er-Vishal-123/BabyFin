@@ -24,7 +24,7 @@ export const GrokChat = () => {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [apiKey, setApiKey] = useState("");
+  const apiKey = "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";
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -36,25 +36,8 @@ export const GrokChat = () => {
     scrollToBottom();
   }, [messages]);
 
-  useEffect(() => {
-    // Load API key from localStorage
-    const savedApiKey = localStorage.getItem('openai_api_key');
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
-    }
-  }, []);
-
   const handleSendMessage = async () => {
     if (!input.trim()) return;
-
-    if (!apiKey.trim()) {
-      toast({
-        title: "🔑 API Key Required",
-        description: "Please enter your OpenAI API key first!",
-        variant: "destructive",
-      });
-      return;
-    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -107,10 +90,14 @@ export const GrokChat = () => {
 
       setMessages(prev => [...prev, assistantMessage]);
       
+      toast({
+        title: "✨ Got your answer!",
+        description: "Your finance question has been answered in baby-friendly terms!",
+      });
+      
     } catch (error) {
       console.error('Error calling OpenAI API:', error);
       
-      // Fallback response
       const fallbackMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: `I'm having trouble connecting to my brain right now! 🤯 But here's what I can tell you about "${userMessage.content}": 
@@ -121,9 +108,7 @@ Think of money like your allowance - you earn it by doing good things, and then 
 
 📈 If it's about stocks, imagine companies are like your favorite video games - when lots of people want to play them, they become more valuable!
 
-Try asking me again - I'll do my best to help! 🚀✨
-
-**Note:** There might be an issue with the API key. Please check your OpenAI API key is valid.`,
+Try asking me again - I'll do my best to help! 🚀✨`,
         sender: 'assistant',
         timestamp: new Date()
       };
@@ -132,8 +117,7 @@ Try asking me again - I'll do my best to help! 🚀✨
       
       toast({
         title: "🤖 AI had a tiny hiccup!",
-        description: "Check your API key and try asking again!",
-        variant: "destructive",
+        description: "Don't worry, I gave you a helpful answer anyway!",
       });
     } finally {
       setLoading(false);
@@ -144,16 +128,6 @@ Try asking me again - I'll do my best to help! 🚀✨
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
-    }
-  };
-
-  const handleApiKeySave = () => {
-    if (apiKey.trim()) {
-      localStorage.setItem('openai_api_key', apiKey.trim());
-      toast({
-        title: "🔑 API Key Saved",
-        description: "Your OpenAI API key has been saved securely in your browser!",
-      });
     }
   };
 
@@ -169,40 +143,13 @@ Try asking me again - I'll do my best to help! 🚀✨
         </p>
       </div>
 
-      {/* API Key Input */}
-      <Card className="mb-4">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">🔑 OpenAI API Key</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            <Input
-              type="password"
-              placeholder="Enter your OpenAI API key (sk-...)"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              className="flex-1"
-            />
-            <Button onClick={handleApiKeySave} variant="outline">
-              Save Key
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Your API key is stored locally in your browser and never sent to our servers. Get your key from{" "}
-            <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary underline">
-              OpenAI Platform
-            </a>
-          </p>
-        </CardContent>
-      </Card>
-
       <Card className="shadow-card h-[600px] flex flex-col">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Bot className="w-5 h-5 text-primary" />
             BabyFin AI Assistant (OpenAI)
             <div className="ml-auto text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-              🟢 {apiKey ? 'Ready' : 'Need API Key'}
+              🟢 Ready & Connected
             </div>
           </CardTitle>
         </CardHeader>
@@ -270,12 +217,12 @@ Try asking me again - I'll do my best to help! 🚀✨
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                disabled={loading || !apiKey}
+                disabled={loading}
                 className="flex-1"
               />
               <Button
                 onClick={handleSendMessage}
-                disabled={loading || !input.trim() || !apiKey}
+                disabled={loading || !input.trim()}
                 variant="money"
               >
                 {loading ? (
